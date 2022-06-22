@@ -1,14 +1,13 @@
 package org.zerhusen.security.rest;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.zerhusen.security.model.User;
+import org.zerhusen.security.rest.dto.UserDto;
 import org.zerhusen.security.service.UserService;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/user")
 public class UserRestController {
 
    private final UserService userService;
@@ -17,8 +16,13 @@ public class UserRestController {
       this.userService = userService;
    }
 
-   @GetMapping("/user")
+   @GetMapping("")
    public ResponseEntity<User> getActualUser() {
       return ResponseEntity.ok(userService.getUserWithAuthorities().get());
+   }
+
+   @PostMapping("")
+   public ResponseEntity<User> postNewUser(@RequestBody UserDto user) {
+      return ResponseEntity.ok(userService.addNewUser(user).get());
    }
 }

@@ -2,14 +2,15 @@ package org.zerhusen.rest;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/person")
 public class PersonRestController {
 
-   @GetMapping("/person")
+   @GetMapping("/")
    public ResponseEntity<Person> getPerson() {
       return ResponseEntity.ok(new Person("John Doe", "john.doe@test.org"));
    }
@@ -32,4 +33,13 @@ public class PersonRestController {
          return email;
       }
    }
+
+
+   @PostMapping("/")
+   public ResponseEntity<Person> postPerson() {
+
+
+      return ResponseEntity.ok(new Person("John Doe", "john.doe@test.org"));
+   }
+
 }
