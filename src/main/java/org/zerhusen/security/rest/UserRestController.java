@@ -2,6 +2,7 @@ package org.zerhusen.security.rest;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.zerhusen.StaticSession;
 import org.zerhusen.security.model.User;
 import org.zerhusen.security.rest.dto.UserDto;
 import org.zerhusen.security.service.UserService;
@@ -23,6 +24,7 @@ public class UserRestController {
 
    @PostMapping("")
    public ResponseEntity<User> postNewUser(@RequestBody UserDto user) {
-      return ResponseEntity.ok(userService.addNewUser(user).get());
+      return ResponseEntity.ok(userService.addDefaultUser(user).get());
    }
+
 }

@@ -3,12 +3,14 @@ package org.zerhusen.security.service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.zerhusen.StaticSession;
 import org.zerhusen.security.SecurityUtils;
 import org.zerhusen.security.model.Authority;
 import org.zerhusen.security.model.User;
 import org.zerhusen.security.repository.AuthorityRepository;
 import org.zerhusen.security.repository.UserRepository;
 import org.zerhusen.security.rest.dto.UserDto;
+import org.zerhusen.utils.PasswordGenerator;
 
 import java.util.*;
 
@@ -19,9 +21,25 @@ public class UserService {
    private final UserRepository userRepository;
    private final AuthorityRepository authorityRepository;
 
+
    public UserService(UserRepository userRepository, AuthorityRepository authorityRepository) {
       this.userRepository = userRepository;
       this.authorityRepository = authorityRepository;
+   }
+
+   @Transactional(readOnly = true)
+   public boolean hasUsers() {
+      return userRepository.count() > 0;
+   }
+
+   @Transactional
+   public void createBaseAuthoritys() {
+      String[] baseAuths = new String[]{StaticSession.ROLE_ADMIN, StaticSession.ROLE_USER};
+      for(String auth: baseAuths){
+         if(authorityRepository.findAuthorityByName(auth).isEmpty()){
+            authorityRepository.save(new Authority(auth));
+         }
+      }
    }
 
    @Transactional(readOnly = true)
@@ -29,11 +47,41 @@ public class UserService {
       return SecurityUtils.getCurrentUsername().flatMap(userRepository::findOneWithAuthoritiesByUsername);
    }
 
+   public Optional<UserDto> generateRootUser(){
+      UserDto userDto = new UserDto();
+      userDto.setActivated(true);
+      userDto.setUsername("super");
+      PasswordGenerator passwordGenerator = new PasswordGenerator.PasswordGeneratorBuilder()
+         .useDigits(true)
+         .useLower(true)
+         .useUpper(true)
+         .build();
+      userDto.setEmail("email@qualquer.com");
+      userDto.setPassword(passwordGenerator.generate(8));
+      userDto.setFirstname("Senhor");
+      userDto.setLastname("Administrador");
+      var rootUser = addRootUser(userDto);
+      if(rootUser.isEmpty()){
+         return Optional.empty();
+      }
+      userDto.setId(rootUser.get().getId());
+      return Optional.of(userDto);
+   }
+
+   public Optional<User> addRootUser(UserDto userDto){
+      return addNewUser(userDto, StaticSession.ROLE_ADMIN);
+   }
+
+   public Optional<User> addDefaultUser(UserDto userDto){
+      return addNewUser(userDto, StaticSession.ROLE_USER);
+   }
+
+
    @Transactional
-   public Optional<User> addNewUser(UserDto userDto) {
+   public Optional<User> addNewUser(UserDto userDto, String authorityRole) {
       BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-      Optional<Authority> authority = authorityRepository.findAuthorityByName("ROLE_USER");
+      Optional<Authority> authority = authorityRepository.findAuthorityByName(authorityRole);
       User user = userRepository.findOneWithAuthoritiesByUsername(userDto.getUsername()).orElse(new User());
       user.setUsername(userDto.getUsername());
       user.setPassword(encoder.encode(userDto.getPassword()));
