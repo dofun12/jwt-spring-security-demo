@@ -43,6 +43,16 @@ public class UserService {
    }
 
    @Transactional(readOnly = true)
+   public List<User> getListUsers() {
+      return userRepository.findAll();
+   }
+
+   @Transactional(readOnly = true)
+   public  Optional<User> getById(Integer id) {
+      return Optional.of(userRepository.getOne(id.longValue()));
+   }
+
+   @Transactional(readOnly = true)
    public Optional<User> getUserWithAuthorities() {
       return SecurityUtils.getCurrentUsername().flatMap(userRepository::findOneWithAuthoritiesByUsername);
    }
@@ -76,12 +86,16 @@ public class UserService {
       return addNewUser(userDto, StaticSession.ROLE_USER);
    }
 
-
    @Transactional
-   public Optional<User> addNewUser(UserDto userDto, String authorityRole) {
-      BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+   public Optional<User> editUser(UserDto userDto) {
+      if(userDto.getId()==null){
+         return addDefaultUser(userDto);
+      }
+      return Optional.of(userRepository.save(userDtoToUser(userDto)));
+   }
 
-      Optional<Authority> authority = authorityRepository.findAuthorityByName(authorityRole);
+   private User userDtoToUser(UserDto userDto){
+      BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
       User user = userRepository.findOneWithAuthoritiesByUsername(userDto.getUsername()).orElse(new User());
       user.setUsername(userDto.getUsername());
       user.setPassword(encoder.encode(userDto.getPassword()));
@@ -89,11 +103,18 @@ public class UserService {
       user.setEmail(userDto.getEmail());
       user.setLastname(userDto.getLastname());
       user.setFirstname(userDto.getFirstname());
+      return user;
+   }
+
+   @Transactional
+   public Optional<User> addNewUser(UserDto userDto, String authorityRole) {
+      BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+
+      Optional<Authority> authority = authorityRepository.findAuthorityByName(authorityRole);
+      User user = userDtoToUser(userDto);
       Set<Authority> authoritySet = new HashSet<>(1);
       authoritySet.add(authority.get());
       user.setAuthorities(authoritySet);
-
-
 
       return Optional.of(userRepository.save(user));
    }

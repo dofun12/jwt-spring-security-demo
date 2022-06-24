@@ -18,6 +18,9 @@ import org.zerhusen.security.rest.dto.LoginDto;
 import org.zerhusen.security.rest.dto.UserDto;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {
@@ -32,20 +35,18 @@ public class JwtDemoApplicationIntegrationTest {
    @Autowired
    private WebTestClient webTestClient;
 
-   @Test
-   public void login() {
-        FluxExchangeResult<String> getInitialUser =
-           webTestClient
-              .mutate()
-              .build()
-              .get()
-              .uri("/api/initialUser")
-              .exchange()
-           .expectStatus()
-           .isOk().returnResult(String.class);
+   private String login() {
+      FluxExchangeResult<String> getInitialUser =
+         webTestClient
+            .mutate()
+            .build()
+            .get()
+            .uri("/api/initialUser")
+            .exchange()
+            .expectStatus()
+            .isOk().returnResult(String.class);
       final byte[] content = getInitialUser.getResponseBodyContent();
       Assert.notNull(content);
-
 
 
       String data = new String(content);
@@ -53,7 +54,7 @@ public class JwtDemoApplicationIntegrationTest {
 
       UserDto userDto = null;
       try {
-         userDto = mapper.convertValue( mapper.readTree(data),UserDto.class);
+         userDto = mapper.convertValue(mapper.readTree(data), UserDto.class);
       } catch (IOException e) {
          e.printStackTrace();
       }
@@ -73,5 +74,21 @@ public class JwtDemoApplicationIntegrationTest {
             .exchange()
             .expectStatus()
             .isOk().expectHeader().exists("Authorization").returnResult(String.class);
+      List<String> authValues = postLoginAuthenticate.getResponseHeaders().get("Authorization");
+      Assert.notNull(authValues);
+     return authValues.toString();
    }
+
+
+   @Test
+   public void testLogin() {
+      login();
+   }
+
+   @Test
+   public void testAddUser() {
+     String authLogin = login();
+
+   }
+
 }

@@ -93,11 +93,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
          .authorizeRequests()
          .antMatchers("/api/initialUser").permitAll()
          .antMatchers("/api/authenticate").permitAll()
+         .antMatchers("/swagger/**").permitAll()
          // .antMatchers("/api/register").permitAll()
          // .antMatchers("/api/activate").permitAll()
          // .antMatchers("/api/account/reset-password/init").permitAll()
          // .antMatchers("/api/account/reset-password/finish").permitAll()
-
          .antMatchers("/api/person").hasAuthority("ROLE_USER")
          .antMatchers("/api/hiddenmessage").hasAuthority("ROLE_ADMIN")
 
