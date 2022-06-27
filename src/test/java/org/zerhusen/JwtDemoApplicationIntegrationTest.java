@@ -14,6 +14,7 @@ import org.springframework.test.web.reactive.server.FluxExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.zerhusen.rest.InitialUserRestController;
+import org.zerhusen.security.model.User;
 import org.zerhusen.security.rest.dto.LoginDto;
 import org.zerhusen.security.rest.dto.UserDto;
 
@@ -29,13 +30,15 @@ import java.util.Optional;
 }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class JwtDemoApplicationIntegrationTest {
 
+   final private ObjectMapper mapper = new ObjectMapper();
+
    @LocalServerPort
    String port;
 
    @Autowired
    private WebTestClient webTestClient;
 
-   private String login() {
+   private UserDto getInitialUser() {
       FluxExchangeResult<String> getInitialUser =
          webTestClient
             .mutate()
@@ -50,7 +53,6 @@ public class JwtDemoApplicationIntegrationTest {
 
 
       String data = new String(content);
-      ObjectMapper mapper = new ObjectMapper();
 
       UserDto userDto = null;
       try {
@@ -59,10 +61,11 @@ public class JwtDemoApplicationIntegrationTest {
          e.printStackTrace();
       }
       Assert.notNull(userDto);
+      return userDto;
+   }
 
-      LoginDto loginDto = new LoginDto();
-      loginDto.setUsername(userDto.getUsername());
-      loginDto.setPassword(userDto.getPassword());
+   private String login(LoginDto loginDto) {
+
 
       FluxExchangeResult<String> postLoginAuthenticate =
          webTestClient
@@ -70,24 +73,69 @@ public class JwtDemoApplicationIntegrationTest {
             .build()
             .post()
             .uri("/api/authenticate")
-            .body(BodyInserters.fromObject(userDto))
+            .body(BodyInserters.fromObject(loginDto))
             .exchange()
             .expectStatus()
             .isOk().expectHeader().exists("Authorization").returnResult(String.class);
       List<String> authValues = postLoginAuthenticate.getResponseHeaders().get("Authorization");
-      Assert.notNull(authValues);
-     return authValues.toString();
+      if (authValues == null) {
+         return "";
+      }
+      return authValues.toString().substring(1);
    }
-
 
    @Test
    public void testLogin() {
-      login();
+      UserDto userDto = getInitialUser();
+      LoginDto loginDto = new LoginDto();
+      loginDto.setUsername(userDto.getUsername());
+      loginDto.setPassword(userDto.getPassword());
+      Assert.notNull(login(loginDto));
    }
 
    @Test
    public void testAddUser() {
-     String authLogin = login();
+      UserDto initialUserDTO = getInitialUser();
+      LoginDto loginDto = new LoginDto();
+      loginDto.setUsername(initialUserDTO.getUsername());
+      loginDto.setPassword(initialUserDTO.getPassword());
+      Assert.notNull(login(loginDto));
+
+      String authLogin = login(loginDto);
+
+      UserDto userDto = new UserDto();
+      userDto.setEmail("mail@meumail.com");
+      userDto.setActivated(true);
+      userDto.setUsername("login");
+      userDto.setFirstname("Nome");
+      userDto.setLastname("Sobrenome");
+      userDto.setPassword("senha1234");
+      FluxExchangeResult<String> postNewUser =
+         webTestClient
+            .mutate()
+            .build()
+            .post()
+            .uri("/api/user/admin")
+            .body(BodyInserters.fromObject(userDto))
+            .header("Authorization", authLogin)
+            .exchange()
+            .expectStatus()
+            .isOk().returnResult(String.class);
+      final byte[] content = postNewUser.getResponseBodyContent();
+      Assert.notNull(content);
+      User userInserted = null;
+      try {
+         userInserted = mapper.readValue(content, User.class);
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
+      Assert.notNull(userInserted);
+
+      final LoginDto newUserLogin = new LoginDto();
+      newUserLogin.setUsername(userDto.getUsername());
+      newUserLogin.setPassword(userDto.getPassword());
+      String newTokenLogin = login(newUserLogin);
+      Assert.notNull(newTokenLogin);
 
    }
 

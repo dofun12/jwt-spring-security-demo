@@ -19,27 +19,6 @@ public class UserRestControllerTest extends AbstractRestControllerTest {
    }
 
    @Test
-   public void getActualUserForUserWithToken() throws Exception {
-      final String token = getTokenForLogin("user", "password", getMockMvc());
-
-      getMockMvc().perform(get("/api/user")
-         .contentType(MediaType.APPLICATION_JSON)
-         .header("Authorization", "Bearer " + token))
-         .andExpect(status().isOk())
-         .andExpect(content().json(
-            "{\n" +
-               "  \"username\" : \"user\",\n" +
-               "  \"firstname\" : \"user\",\n" +
-               "  \"lastname\" : \"user\",\n" +
-               "  \"email\" : \"enabled@user.com\",\n" +
-               "  \"authorities\" : [ {\n" +
-               "    \"name\" : \"ROLE_USER\"\n" +
-               "  } ]\n" +
-               "}"
-         ));
-   }
-
-   @Test
    public void getActualUserForUserWithoutToken() throws Exception {
       getMockMvc().perform(get("/api/user")
          .contentType(MediaType.APPLICATION_JSON))

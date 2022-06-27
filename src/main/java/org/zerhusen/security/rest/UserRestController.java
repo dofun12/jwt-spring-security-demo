@@ -29,6 +29,11 @@ public class UserRestController {
       return ResponseEntity.ok(userService.addDefaultUser(user).orElse(new User()));
    }
 
+   @PostMapping("/admin")
+   public ResponseEntity<User> postNewAdminUser(@RequestBody UserDto user) {
+      return ResponseEntity.ok(userService.addRootUser(user).orElse(new User()));
+   }
+
    @GetMapping("/{id}")
    public ResponseEntity<User> getById(@PathVariable Integer id) {
       return ResponseEntity.ok(userService.getById(id).orElse(new User()));
